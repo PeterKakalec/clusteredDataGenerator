@@ -49,13 +49,8 @@ getDat <- function(nGroups,groupN,popInt,popSlopeL1,popSlopeL2,popInter,intVar,s
     df <- data.frame("Level1"=x,y=y,"groups"=as.factor(groups),"Level2"=weightsFac)
     return(df)
 }
-# Define UI for application that draws a histogram
 ui <- fluidPage(
-    
-    # Application title
     titlePanel("Random Coefficients Modeling"),
-    
-    # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
             actionButton("save", 
@@ -112,8 +107,6 @@ ui <- fluidPage(
                         value = 5,
                         step = 1)
         ),
-        
-        # Show a plot of the generated distribution
         mainPanel(
             tabsetPanel(
                 tabPanel("OLS Model",
@@ -126,8 +119,6 @@ ui <- fluidPage(
             )
     )
 )
-
-# Define server logic required to draw a histogram
 server <- function(input, output, session) {
     observeEvent(input$save, {
         write.csv(makeDF(),"data.csv")
@@ -163,6 +154,4 @@ server <- function(input, output, session) {
       summary(lmer(y~Level1*Level2+(Level1|groups),data=makeDF()))
     })
 }
-
-# Run the application 
 shinyApp(ui = ui, server = server)
