@@ -151,7 +151,11 @@ server <- function(input, output, session) {
       summary(lm(y~Level1*Level2,data=makeDF()))
     })
     output$LMEout <- renderPrint({
-      summary(lmer(y~Level1*Level2+(Level1|groups),data=makeDF()))
+      lmer0<-lmer(y~1+(1|groups),data=makeDF())
+      lmer1<-lmer(y~Level1+(Level1|groups),data=makeDF())
+      lmer2<-lmer(y~Level1+Level2+(Level1|groups),data=makeDF())
+      lmer3<-lmer(y~Level1*Level2+(Level1|groups),data=makeDF())
+      anova(lmer0,lmer1,lmer2,lmer3)
     })
 }
 shinyApp(ui = ui, server = server)
