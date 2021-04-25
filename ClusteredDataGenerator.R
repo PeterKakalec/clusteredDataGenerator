@@ -18,16 +18,15 @@ y<-NULL
 groups<-NULL
 weightsFac<-NULL
 
-getDat <- function(nGroups,groupN,popInt,popSlopeL1,popSlopeL2,popInter,intVar,slopeVar,noise){
+getDat <- function(nGroups,groupN,xScatter,popInt,popSlopeL1,popSlopeL2,popInter,intVar,slopeVar,noise){
     #Generating (# of groups * size of groups) x values
     x <- rnorm(nGroups*groupN,0,1)
     
     #Generating group values
     rSlopes <- rnorm(nGroups,popSlopeL1,slopeVar) #Generating a slope for each group, centered around the level 1 population level slope
     rInts <- rnorm(nGroups,popInt,intVar) #Generating an intercept for each group, centered around the population intercept
-    xOffset<-rnorm(nGroups,5,10) #Creating a value to offset each group's x variable - needed to create distinct patches of data
+    xOffset<-rnorm(nGroups,0,xScatter) #Creating a value to offset each group's x variable - needed to create distinct patches of data
     weights<-round(rnorm(nGroups,5,5),0) #our Level 2 variable for each group
-    
     
     for (i in 1:nGroups) {
         #Figuring out the boundaries for the group
@@ -49,8 +48,13 @@ getDat <- function(nGroups,groupN,popInt,popSlopeL1,popSlopeL2,popInter,intVar,s
     df <- data.frame("Level1"=x,y=y,"groups"=as.factor(groups),"Level2"=weightsFac)
     return(df)
 }
+# Define UI for application that draws a histogram
 ui <- fluidPage(
+    
+    # Application title
     titlePanel("Random Coefficients Modeling"),
+    
+    # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
             actionButton("save", 
@@ -65,6 +69,11 @@ ui <- fluidPage(
                         "Size of groups:",
                         min = 1,
                         max = 1000,
+                        value = 200),
+            sliderInput("xScatter",
+                        "Group X SD:",
+                        min = 1,
+                        max = 100,
                         value = 200),
             sliderInput("popInt",
                         "Population Intercept:",
@@ -105,8 +114,9 @@ ui <- fluidPage(
                         min = 0,
                         max = 50,
                         value = 5,
-                        step = 1)
-        ),
+                        step = 1)),
+        
+        # Show a plot of the generated distribution
         mainPanel(
             tabsetPanel(
                 tabPanel("OLS Model",
@@ -119,6 +129,8 @@ ui <- fluidPage(
             )
     )
 )
+
+# Define server logic required to draw a histogram
 server <- function(input, output, session) {
     observeEvent(input$save, {
         write.csv(makeDF(),"data.csv")
@@ -126,7 +138,7 @@ server <- function(input, output, session) {
                                   message = paste("File written to",getwd()))
     })
     makeDF <- reactive({
-        getDat(input$nGroups,input$groupN,input$popInt,input$popSlopeL1,input$popSlopeL2, input$popInter, input$intVar,input$slopeVar,input$noise)
+        getDat(input$nGroups,input$groupN,input$xScatter, input$popInt,input$popSlopeL1,input$popSlopeL2, input$popInter, input$intVar,input$slopeVar,input$noise)
     })
     output$rcmPlot <- renderPlot({
         plot <- ggplot(data=makeDF(),aes(x=Level1,y=y))+
@@ -156,6 +168,9 @@ server <- function(input, output, session) {
       lmer2<-lmer(y~Level1+Level2+(Level1|groups),data=makeDF())
       lmer3<-lmer(y~Level1*Level2+(Level1|groups),data=makeDF())
       anova(lmer0,lmer1,lmer2,lmer3)
+      #lms<-c(lmer0,lmer1,lmer2,lmer3)
     })
 }
+
+# Run the application 
 shinyApp(ui = ui, server = server)
